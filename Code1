@@ -1,36 +1,93 @@
+#include <Servo.h>
 
-// Sweep
+Servo servoLeft; //my first servo motor (Left)
+Servo servoRight; //my second servo motor (Right)
 
-#include <Servo.h> 
- 
-Servo myservo1;  // create servo object to control a servo 
-Servo myservo2; 
-                // a maximum of eight servo objects can be created 
- 
-int pos = 0;    // variable to store the servo position 
- 
-void setup() 
-{ 
-  myservo1.attach(9);  // attaches the servo on pin 9 to the servo object 
-  myservo2.attach(10);
-  // initalize placement.  because position is unknown at boot time
-} 
- 
- 
-void loop() 
-{ 
-  // this is the function for open 
-  for(pos = 0; pos < 180; pos += 1)  // goes from 0 degrees to 180 degrees 
-  {                                  // in steps of 1 degree 
-    myservo1.write(pos);  
-    myservo2.write(abs(pos-180));    // tell servo to go to position in variable 'pos' 
-    delay(15);                       // waits 15ms for the servo to reach the position 
+// set pin numbers
+const int openButtonPin = 7; // for Open button
+const int closeButtonPin = 8; // for Close button
+
+
+// Setup of states
+enum clawStates {
+  OPENING,
+  CLOSING,
+  OPEN,
+  CLOSED
+};
+
+int openLimit = 180;
+int closedLimit = 90;
+int openIncrement = -1;
+int closeIncrement = -openIncrement;
+int increment = 90;
+int pos = 180;
+
+// Initial state: opened
+int clawState = OPEN;
+
+
+void setup() {
+  servoLeft.attach(9);
+  servoRight.attach(10);
+  pinMode(openButtonPin, INPUT);
+  pinMode(closeButtonPin, INPUT);
+  Serial.begin(9600);
+
+  // Make sure claw is open at setup
+
+}
+
+void loop() {
+  // reading if buttons are pressed
+
+  int openButtonState = digitalRead(openButtonPin);
+  int closeButtonState = digitalRead(closeButtonPin);
+  if (openButtonState == HIGH) {
+    Serial.println("openButtonPress");
+    clawState = 0;
+    increment = openIncrement;
+    Serial.print("claw state is ");
+    Serial.println(clawState);
+  };
+  if (closeButtonState == HIGH) {
+    Serial.println("closeButtonPress");
+    clawState = 1;
+    increment = closeIncrement;
+    Serial.print("claw state is ");
+    Serial.println(clawState);
+  };
+
+
+
+
+  if (clawState == 0 || clawState == 1) {
+    if (clawState == 0) {
+      Serial.println("We are opening");
+    }
+    if (clawState == 1) {
+      Serial.println("We are closing");
+    }
+    pos = pos + increment;
+//    Serial.print("Left is : ");
+//    Serial.println(pos);
+//    Serial.print("Right is : ");
+//    Serial.println(abs(pos - 180));
+    servoLeft.write(pos);
+    servoRight.write(abs(pos - 180));
+    delay(15);
+
+    // Change states at extremes
+    if (pos <= 125) {
+    clawState = 3;
+    pos = 125;
+    Serial.println("We are open");
+  }
+    if (pos >= 180) {
+    clawState = 2;
+    pos = 180;
+    Serial.println("We are closed");
   } 
-  // thisis the close (or vice versa?
-   for(pos = 180; pos>=1; pos-=1)     // goes from 180 degrees to 0 degrees 
-  {                                
-    myservo1.write(pos);
-    myservo2.write(abs(pos-180));    // tell servo to go to position in variable 'pos' 
-    delay(15);                       // waits 15ms for the servo to reach the position 
-  } 
-} 
+  }
+  
+}
